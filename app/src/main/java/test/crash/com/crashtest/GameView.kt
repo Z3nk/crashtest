@@ -4,14 +4,21 @@ import android.content.Context
 import android.graphics.BitmapFactory
 import android.graphics.Canvas
 import android.util.AttributeSet
+import android.view.MotionEvent
 import android.view.SurfaceHolder
 import android.view.SurfaceView
 import test.crash.com.crashtest.models.Grenade
+import test.crash.com.crashtest.models.Player
 
 class GameView(context: Context, attributes: AttributeSet) : SurfaceView(context, attributes), SurfaceHolder.Callback {
     private val thread: GameThread
 
     private var grenade: Grenade? = null
+    private var player: Player? = null
+
+    private var touched: Boolean = false
+    private var touched_x: Int = 0
+    private var touched_y: Int = 0
     init {
 
         // add callback
@@ -24,6 +31,7 @@ class GameView(context: Context, attributes: AttributeSet) : SurfaceView(context
 
     override fun surfaceCreated(surfaceHolder: SurfaceHolder) {
         grenade = Grenade(BitmapFactory.decodeResource(resources, R.drawable.grenade))
+        player = Player(BitmapFactory.decodeResource(resources, R.drawable.hero))
         // start the game thread
         thread.setRunning(true)
         thread.start()
@@ -52,6 +60,9 @@ class GameView(context: Context, attributes: AttributeSet) : SurfaceView(context
      */
     fun update() {
         grenade?.update()
+        if(touched) {
+            player?.update(touched_x, touched_y)
+        }
     }
 
     /**
@@ -60,6 +71,24 @@ class GameView(context: Context, attributes: AttributeSet) : SurfaceView(context
     override fun draw(canvas: Canvas) {
         super.draw(canvas)
         grenade?.draw(canvas)
+        player?.draw(canvas)
     }
 
+    override fun onTouchEvent(event: MotionEvent): Boolean {
+        // when ever there is a touch on the screen,
+        // we can get the position of touch
+        // which we may use it for tracking some of the game objects
+        touched_x = event.x.toInt()
+        touched_y = event.y.toInt()
+
+        val action = event.action
+        when (action) {
+            MotionEvent.ACTION_DOWN -> touched = true
+            MotionEvent.ACTION_MOVE -> touched = true
+            MotionEvent.ACTION_UP -> touched = false
+            MotionEvent.ACTION_CANCEL -> touched = false
+            MotionEvent.ACTION_OUTSIDE -> touched = false
+        }
+        return true
+    }
 }
